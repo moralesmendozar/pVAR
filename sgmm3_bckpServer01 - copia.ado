@@ -19,8 +19,8 @@
 * for ex: test [eq1_]sk=[eq2_]h_sk   
 *
 
-capture program drop sgmm3_bckpServer01
-program define sgmm3_bckpServer01
+capture program drop sgmm3
+program define sgmm3
 version 6.0
 *set trace on
 
@@ -159,24 +159,26 @@ local listup "`listup' u`g'"  /* list of permanent variables with residuals */
 local nameu "`nameu' eq`g'"  /*  list of equation numbers - to name rows and columns of uu */
   local g=`g'+1
 }
-if $G>1 {  /* correlation matrix is only calculated if more then 1 equation is specified */
+
+
+*if $G>1 {  /* correlation matrix is only calculated if more then 1 equation is specified */
 **** generating U'U matrix of variance-covariance of resuduals *****
-*di "these are summary  of residuals:"
-*sum `listu' $names
-
-qui mat accum uu=`listup' , nocons    /* this is u'u for all equations */
-mat uu=(1/`nused')*uu
-if "$names"~="" {       local nameu "$names"        } 
-  * for VAR only - $names is the list of all Y variable names 
-  * for others - make the list later using Y variables, for now will use eq1 eq2 ...
-mat colnames uu = `nameu'     
-mat rownames uu = `nameu'
-*mat list uu
-
-di " "
-di in g "Residuals correlation matrix "
-pwcorr `listup' , sig
-}
+**di "these are summary  of residuals:"
+**sum `listu' $names
+*
+*qui mat accum uu=`listup' , nocons    /* this is u'u for all equations */
+*mat uu=(1/`nused')*uu
+*if "$names"~="" {       local nameu "$names"        } 
+*  * for VAR only - $names is the list of all Y variable names 
+*  * for others - make the list later using Y variables, for now will use eq1 eq2 ...
+*mat colnames uu = `nameu'     
+*mat rownames uu = `nameu'
+**mat list uu
+*
+*di " "
+*di in g "Residuals correlation matrix "
+*pwcorr `listup' , sig
+*}
 
 *di "b2Mata = "
 *matrix list b2Mata
@@ -532,9 +534,11 @@ printf("ZtY processing... ")
 ZtY = Z'*newY
 	/* ojo, ZZ ya está a la menos uno...						*/
 printf("invsym(cross(Z,Z)) processing... ")
-ZZ = invsym(cross(Z,Z))
+/*  ZZ = invsym(cross(Z,Z))  */
+ZZ = qrinv(cross(Z,Z))
 printf("processing... ZtXtZZZtX = invsym(ZtX'* ZZ * ZtX ) processing... ")
-ZtXtZZZtX = invsym(ZtX'* ZZ * ZtX )
+/*   ZtXtZZZtX = invsym(ZtX'* ZZ * ZtX )   */
+ZtXtZZZtX = qrinv(ZtX'* ZZ * ZtX )
 printf("processing... b = ZtXtZZZtX * ZtX' * ZZ * ZtY processing... ")
 b = ZtXtZZZtX * ZtX' * ZZ * ZtY
 printf("passing b to b2Mata... ")
@@ -542,10 +546,24 @@ st_matrix("b2Mata", b)
 	/*  b = vec(b)		*/
 printf("passing b to b2M... ")
 st_matrix("b2M", b)
+		/*     And we calculate the errors and variance...	*/
+epsil = newY - X*b
+		/*  We need to build the errors as a matrix to multiply it easily  */
+		/*    We build epsM, that is epsil in a matrixized fashion... */
+sumpT = 0
+epsM = J(0,G,0)
+for(i=1;i<=numPais;i++){
+	vecEps = epsil[sumpT+1..sumpT+pTT[i]*G]
+	mateps = colshape(vecEps,pTT[i])'
+	/*   mateps = rowshape(vecEps',pTT[i])   */
+	epsM = (epsM \ mateps)
+	sumpT = sumpT + pTT[i]*G
+}
+matvaru = epsM'*epsM
 
-printf("matvar processing = invsym(ZtX'* ZZ * ZtX )... ")
+		/*   printf("matvar processing = invsym(ZtX'* ZZ * ZtX )... ")   */
 matvar=numobs*ZtXtZZZtX
-/* mat var=`nused'*invsym(`zx'' * `W' * `zx') ... variance-covariance matrix */
+		/* mat var=`nused'*invsym(`zx'' * `W' * `zx') ... variance-covariance matrix */
 		/*       st_global("numobs", numObs)					*/
 
 
@@ -556,8 +574,19 @@ perturb = J(nn,1,epsilon)
 perturb = diag(perturb)
 matvar = matvar + perturb 
 
+/*     agregamos perturbación a matvaru para que sea pdf	*/
+nnu = rows(matvaru)
+epsilonu = 0.001
+perturbu = J(nnu,1,epsilonu)
+perturbu = diag(perturbu)
+matvaru = matvaru + perturbu 
+
+		/*    L = cholesky(matvar)        */
+
 printf("passing matvar to matvar... ")
 st_matrix("matvar", matvar)
+printf("passing matvaru to uu... ")
+st_matrix("uu", matvaru)
 printf("passing b to b2slsMata... ")
 st_matrix("b2slsMata", b)
 
@@ -706,5 +735,7 @@ while `i'<=`rows'{
   local i=`i'+1
 }
 end
+
+
 
 
