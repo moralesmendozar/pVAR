@@ -648,7 +648,7 @@ st_matrix("b2slsMata", b)
 	/* Y[1..600,.] 			*/
 
 
-
+}
 end
 
 
