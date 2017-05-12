@@ -456,12 +456,11 @@ for(i=1;i<=numPais;i++){
 X = Xvec
 
 
-
 /*
 	/*    Creamos la matriz Z a la manera de Arellano - Bond  		*/
 	/*      ... instrumentando correctamente...				*/
 	/*    Ya tenemos maxYearInit, minYearEnd, y con p se puede hacer todo	*/
-/*Z= J(m,n,.)*/
+	/*   Z= J(m,n,.)   */
 numforsZ = minYearEnd_Y - maxYearInit_Y - pp
 Zold = J(numPais*(numforsZ+1),0,.)
 for(i = 1; i <= numforsZ; i++){
@@ -563,12 +562,12 @@ ZtXtZZZtX = invsym(ZtX'* ZZ * ZtX )
 /*   ZtXtZZZtX = qrinv(ZtX'* ZZ * ZtX )      */
 printf("processing... b2sls = ZtXtZZZtX * ZtX' * ZZ * ZtY processing... ")
 b2sls = ZtXtZZZtX * ZtX' * ZZ * ZtY
+
+
 printf(" u = newY - X*b2sls processing... ")
 u = newY - X*b2sls
 
 
-
-printf("processing... ZuuZ... ")
 county = 0
 ZuuZ = J(cols(Z),cols(Z),0)
 for(i=1;i<= numPais;i++){
@@ -579,19 +578,16 @@ for(i=1;i<= numPais;i++){
 	county = county + pTT[i]
 }
 ZuuZ = invsym(1/numobs * ZuuZ)
-printf("done with... ZuuZ... ")
 
-     /*   printf(" u'*Z processing... ")                     */
-     /*   uZ = u'*Z                                          */
-     /*   printf(" invsym(cross(uZ,uZ)) processing... ")     */
-     /*   ZuuZ = invsym( 1/numobs *cross(uZ,uZ))             */
-     /*   ZuuZ = ZuuZ                                        */
+	/*   printf(" u'*Z processing... ")                     */
+	/*   uZ = u'*Z                                          */
+	/*   printf(" invsym(cross(uZ,uZ)) processing... ")     */
+	/*   ZuuZ = invsym( 1/numobs *cross(uZ,uZ))             */
+	/*   ZuuZ = ZuuZ                                        */
 
-	
-	
-	
 printf("processing... ZtXtZuuZZtX = invsym(ZtX'* ZuuZ * ZtX ) processing... ")
 ZtXtZuuZZtX = invsym(ZtX'* ZuuZ * ZtX )
+
 printf("processing... b = ZtXtZuuZZtX * ZtX' * ZuuZ * ZtY processing... ")
 b = ZtXtZuuZZtX * ZtX' * ZuuZ * ZtY
 
@@ -601,6 +597,7 @@ st_matrix("b2Mata", b)
 	/*  b = vec(b)		*/
 printf("passing b to b2M... ")
 st_matrix("b2M", b)
+
 		/*     And we calculate the errors and variance...	*/
 epsil = newY - X*b
 		/*  We need to build the errors as a matrix to multiply it easily  */
@@ -651,9 +648,11 @@ st_matrix("b2slsMata", b)
 	/* Y[1..600,.] 			*/
 
 
-}
 
 end
+
+
+
 **************************************************** Mata Code endet.. ;)
 ************************************************************************************
 ************************************************************************************
