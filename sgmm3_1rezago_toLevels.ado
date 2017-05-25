@@ -19,8 +19,8 @@
 * for ex: test [eq1_]sk=[eq2_]h_sk   
 *
 
-capture program drop sgmm3_1rezago
-program define sgmm3_1rezago
+capture program drop sgmm3_levelsZ
+program define sgmm3_levelsZ
 version 6.0
 *set trace on
 
@@ -90,12 +90,12 @@ mat `invz'=invsym(`zz')
 *mat b2sls=invsym(`zx'' * `invz' * `zx' ) * `zx'' * `invz' * `zy'
 * b2sls se obtendrá con el MATA
 *di "getting varlist..."
-local varlist = "$vrlst"
+*local varlist = "$vrlst"
+
 *di " varlist:"
 *di "varlist = `varlist'"
 *di "names = $names"
 di "hnames = $hnames"
-
 di in b "Mata beginnt..."
 * The b is calculated with the pertinent Z :)
 *di "-------------------------------------------------"
@@ -398,11 +398,12 @@ pT = T-pp
 
 
               /*   maxYearInit vec	*/
-mxYI = vec_EmpTermPaises[.,1]
-	/*  	mxYI = J(numPais,1,1)*maxYearInit_Y 	*/
+	/*  mxYI = vec_EmpTermPaises[.,1]    */
+mxYI = J(numPais,1,1)*maxYearInit_Y 
 		      /*   minYearEnd vec	*/
-mnYE = vec_EmpTermPaises[.,2]
-	/*	mnYE = J(numPais,1,1)*minYearEnd_Y   */
+	/*  mnYE = vec_EmpTermPaises[.,2]  */
+mnYE = J(numPais,1,1)*minYearEnd_Y 
+
 
 
 
@@ -505,12 +506,16 @@ w = J(0,0,.)
 maxindex(pTT,1,l ,w)
 maxpTT = pTT[l[1],1] 
 
+/*  For sgmm_levels Z to instrument with lags, we simply say:  */
+A = st_data(.,(varname))
+mm = rows(A)
+nn = cols(A)
+
 	/* We build the Z with the correct instruments...	*/
 	/* numforsZ = mnYE- mxYI - pp*J(rows(TT),1,1)  */
 	/* 2 alternative ways of building the same matrix	*/
 numforsZ = pTT - J(rows(TT),1,1)
-              /* /* /* *   gauss = (maxpTT *(maxpTT - 1) ) / 2   * */ */  */
-gauss = maxpTT
+gauss = (maxpTT *(maxpTT - 1) ) / 2
 Z = J(0,G*(gauss + pp*(G-1)),0)
 for(i=1;i<= numPais;i++){
 	i
@@ -522,18 +527,16 @@ for(i=1;i<= numPais;i++){
 		Zgg = J(pTT[i],gauss,0)
 		for(k=2;k<= numforsZ[i]+1;k++){
 			ygik = A[numtrim*(i-1)+mxYI[i]+k-2,g]
-			/*if(k<=3){
-			*	yk = (yk,ygik)
-			*}else{
-			*	yk = (yk[2..cols(yk)],ygik)
-			*}  */
-			yk = ygik /* /* /* *   para 1 rezago sólamente   * */ */  */
+			if(k<=3){
+				yk = (yk,ygik)
+			}else{
+				yk = (yk[2..cols(yk)],ygik)
+			}
 			lenk = cols(yk)
 			sumlen = lenk + sumlenpast
 			Zgg[k,sumlenpast+1..sumlen] = yk
 			sumlenpast = sumlen
 		}
-		 /* printf("oook")  */
 		cInd = 1..G
 		vec = cInd:!=g
 		Yg = J(pTT[i],0,0)
