@@ -19,8 +19,8 @@
 * for ex: test [eq1_]sk=[eq2_]h_sk   
 *
 
-capture program drop sgmm3_levelsZ
-program define sgmm3_levelsZ
+capture program drop sgmm3
+program define sgmm3
 version 6.0
 *set trace on
 
@@ -90,19 +90,16 @@ mat `invz'=invsym(`zz')
 *mat b2sls=invsym(`zx'' * `invz' * `zx' ) * `zx'' * `invz' * `zy'
 * b2sls se obtendrá con el MATA
 *di "getting varlist..."
-*local varlist = "$vrlst"
-
+local varlist = "$vrlst"
 *di " varlist:"
-*di "varlist = `varlist'"
-*di "names = $names"
-di "hnames = $hnames"
+di "`varlist'"
 di in b "Mata beginnt..."
 * The b is calculated with the pertinent Z :)
 *di "-------------------------------------------------"
 *di "-------------------------------------------------"
 **************************************************MATA CODE call function
 timer on 1
-mata: getb2sls("$names","$hnames")
+mata: getb2sls("`varlist'")
 timer off 1
 **************************************************
 *di "-------------------------------------------------"
@@ -249,7 +246,7 @@ end
 **************************************************** Mata Code beginnt. ;)
 version 6.0
 mata:
-function getb2sls(varname,varhname)
+function getb2sls(varname)
 {
 	/*  st_view(matTest0 =.,.,("l.h_gc l.h_gdp l.h_ca l.h_reer"))		*/
 	/* Va a haber que modificar esto para que sea generalizable...		*/
@@ -261,7 +258,7 @@ numPais = strtoreal(st_global("nc"))
 G = numvars
 /* matrixData = st_data(.,("h_gc h_gdp h_ca h_reer")) */
 
-matrixData = st_data(.,(varhname))			
+matrixData = st_data(.,(varname))			
 		/* past line for when function in stata */
 				/* and next line only for notepad */ 
 		/*   (when building Z 4 first time) */
@@ -398,12 +395,11 @@ pT = T-pp
 
 
               /*   maxYearInit vec	*/
-	/*  mxYI = vec_EmpTermPaises[.,1]    */
-mxYI = J(numPais,1,1)*maxYearInit_Y 
+mxYI = vec_EmpTermPaises[.,1]
+	/*  	mxYI = J(numPais,1,1)*maxYearInit_Y 	*/
 		      /*   minYearEnd vec	*/
-	/*  mnYE = vec_EmpTermPaises[.,2]  */
-mnYE = J(numPais,1,1)*minYearEnd_Y 
-
+mnYE = vec_EmpTermPaises[.,2]
+	/*	mnYE = J(numPais,1,1)*minYearEnd_Y   */
 
 
 
@@ -505,11 +501,6 @@ w = J(0,0,.)
 	/* w no se usa */
 maxindex(pTT,1,l ,w)
 maxpTT = pTT[l[1],1] 
-
-/*  For sgmm_levels Z to instrument with lags, we simply say:  */
-A = st_data(.,(varname))
-mm = rows(A)
-nn = cols(A)
 
 	/* We build the Z with the correct instruments...	*/
 	/* numforsZ = mnYE- mxYI - pp*J(rows(TT),1,1)  */
